@@ -13,6 +13,10 @@ class RockAndRollAPI < Sinatra::Base
     end
   end
 
+  def json_params
+    JSON.parse(request.body.read)
+  end
+
   def songs_for_band(band)
     band_songs_records = DB[:songs].where(band_id: band[:id])
     band_songs_records.map do |song|
@@ -25,25 +29,32 @@ class RockAndRollAPI < Sinatra::Base
   end
 
   get '/bands' do
-    bands = DB[:bands]
     status 200
     headers({ "Content-Type" =>"application/json" })
-    [].tap do |json_response|
-      bands.each do |band|
-        json_response << { id: band[:id], name: band[:name], songs: songs_for_band(band) }
-      end
-    end.to_json
+
+    songs_payload = []
+    bands_payload = DB[:bands].map do |band|
+      band_songs = songs_for_band(band)
+      songs_payload.concat band_songs
+      { id: band[:id], name: band[:name], songs: band_songs.map {|s| s[:id]} }
+    end
+
+    {
+      bands: bands_payload,
+      songs: songs_payload
+    }.to_json
   end
 
   post '/bands' do
-    band_name = params[:name]
-    attributes = { name: band_name }
-    bands = DB[:bands]
-    band_id = bands.insert(attributes)
+    attributes = json_params['band']
+    band_id = DB[:bands].insert(attributes)
 
     status 201 # Created
     headers({ "Content-Type" =>"application/json" })
-    attributes.merge(id: band_id, songs: []).to_json
+
+    {
+      band: attributes.merge(id: band_id, songs: [])
+    }.to_json
   end
 
   get '/bands/:id' do
@@ -67,23 +78,30 @@ class RockAndRollAPI < Sinatra::Base
   end
 
   post '/songs' do
-    songs = DB[:songs]
-    attributes = { title: params[:title], band_id: params[:band_id], rating: 0 }
-    song_id = songs.insert(attributes)
+    attributes = json_params['song'].merge 'rating' => 0
+    attributes['band_id'] = attributes.delete('band')
+    song_id = DB[:songs].insert(attributes)
 
     status 201
     headers({ "Content-Type" =>"application/json" })
-    attributes.merge(id: song_id).to_json
+
+    {
+      song: attributes.merge(id: song_id)
+    }.to_json
   end
 
   put '/songs/:id' do
     songs = DB[:songs]
-    songs.where(id: params[:id]).update(rating: params[:rating])
+    new_rating = json_params['song']['rating']
+    songs.where(id: params[:id]).update(rating: new_rating)
     attributes = songs.where(id: params[:id]).first
 
     status 200
     headers({ "Content-Type" =>"application/json" })
-    attributes.to_json
+
+    {
+      song: attributes
+    }.to_json
   end
 
 end
