@@ -1,2 +1,4 @@
-db/*.db
+Gemfile.lock
 vendor/ruby
+
+/*.db
