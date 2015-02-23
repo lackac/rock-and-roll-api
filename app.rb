@@ -13,20 +13,20 @@ class RockAndRollAPI < Sinatra::Base
     end
   end
 
-  def songs_for_artist(artist)
-    artist_songs_records = DB[:songs].where(artist_id: artist[:id])
-    artist_songs_records.map do |song|
+  def songs_for_band(band)
+    band_songs_records = DB[:songs].where(band_id: band[:id])
+    band_songs_records.map do |song|
       { id: song[:id], title: song[:title], rating: song[:rating] }
     end
   end
 
-  def artist_for_slug(slug)
-    artists = DB[:artists]
-    artists.detect do |artist|
-      name = artist[:name]
+  def band_for_slug(slug)
+    bands = DB[:bands]
+    bands.detect do |band|
+      name = band[:name]
       name_parts = name.split(/\s+/).map(&:downcase)
-      artist_slug = name_parts.join('-')
-      artist_slug == slug
+      band_slug = name_parts.join('-')
+      band_slug == slug
     end
   end
 
@@ -34,51 +34,51 @@ class RockAndRollAPI < Sinatra::Base
     [200, { "Content-Type" =>"application/json" }, { name: "Rock & Roll API", version: '0.1' }.to_json]
   end
 
-  get '/artists' do
-    artists = DB[:artists]
+  get '/bands' do
+    bands = DB[:bands]
     status 200
     headers({ "Content-Type" =>"application/json" })
     [].tap do |json_response|
-      artists.each do |artist|
-        json_response << { id: artist[:id], name: artist[:name], songs: songs_for_artist(artist) }
+      bands.each do |band|
+        json_response << { id: band[:id], name: band[:name], songs: songs_for_band(band) }
       end
     end.to_json
   end
 
-  post '/artists' do
-    artist_name = params[:name]
-    attributes = { name: artist_name }
-    artists = DB[:artists]
-    artist_id = artists.insert(attributes)
+  post '/bands' do
+    band_name = params[:name]
+    attributes = { name: band_name }
+    bands = DB[:bands]
+    band_id = bands.insert(attributes)
 
     status 201 # Created
     headers({ "Content-Type" =>"application/json" })
-    attributes.merge(id: artist_id, songs: []).to_json
+    attributes.merge(id: band_id, songs: []).to_json
   end
 
-  get '/artists/:slug' do
-    artist = artist_for_slug(params[:slug])
+  get '/bands/:slug' do
+    band = band_for_slug(params[:slug])
 
     status 200
     headers({ "Content-Type" =>"application/json" })
     {
-      id: artist[:id],
-      name: artist[:name],
-      songs: songs_for_artist(artist)
+      id: band[:id],
+      name: band[:name],
+      songs: songs_for_band(band)
     }.to_json
   end
 
-  get '/artists/:slug/songs' do
+  get '/bands/:slug/songs' do
     status 200
     headers({ "Content-Type" =>"application/json" })
 
-    artist = artist_for_slug(params[:slug])
-    songs_for_artist(artist).to_json
+    band = band_for_slug(params[:slug])
+    songs_for_band(band).to_json
   end
 
   post '/songs' do
     songs = DB[:songs]
-    attributes = { title: params[:title], artist_id: params[:artist_id], rating: 0 }
+    attributes = { title: params[:title], band_id: params[:band_id], rating: 0 }
     song_id = songs.insert(attributes)
 
     status 201
