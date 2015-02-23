@@ -36,7 +36,7 @@ class RockAndRollAPI < Sinatra::Base
     bands_payload = DB[:bands].map do |band|
       band_songs = songs_for_band(band)
       songs_payload.concat band_songs
-      { id: band[:id], name: band[:name], songs: band_songs.map {|s| s[:id]} }
+      band.merge songs: band_songs.map {|s| s[:id]}
     end
 
     {
@@ -66,6 +66,20 @@ class RockAndRollAPI < Sinatra::Base
       id: band[:id],
       name: band[:name],
       songs: songs_for_band(band)
+    }.to_json
+  end
+
+  put '/bands/:id' do
+    bands = DB[:bands]
+    new_description = json_params['band']['description']
+    bands.where(id: params[:id]).update(description: new_description)
+    attributes = bands.where(id: params[:id]).first
+
+    status 200
+    headers({ "Content-Type" =>"application/json" })
+
+    {
+      band: attributes
     }.to_json
   end
 

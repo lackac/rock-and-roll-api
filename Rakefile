@@ -8,6 +8,7 @@ namespace :db do
     DB.create_table :bands do
       primary_key :id
       String :name
+      String :description, text: true
     end
 
     DB.create_table :songs do
@@ -76,6 +77,20 @@ namespace :db do
         end
       end
     end
+
+    bands.where(name: "Pearl Jam").update(description: <<-EOS)
+Pearl Jam is an American rock band, formed in Seattle, Washington,
+in 1990, after the demise of Gossard and Ament's previous band,
+Mother Love Bone. Pearl Jam broke into the mainstream with its
+debut album, Ten, in 1991. One of the key bands of the grunge
+movement in the early 1990s, over the course of the band's career,
+its members became noted for their refusal to adhere to
+traditional music industry practices, including refusing to make
+music videos or give interviews and engaging in a much-publicized
+boycott of Ticketmaster. In 2006, Rolling Stone described the band
+as having "spent much of the past decade deliberately tearing
+apart their own fame."
+    EOS
   end
 
 end
