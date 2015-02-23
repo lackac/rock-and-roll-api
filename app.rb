@@ -20,16 +20,6 @@ class RockAndRollAPI < Sinatra::Base
     end
   end
 
-  def band_for_slug(slug)
-    bands = DB[:bands]
-    bands.detect do |band|
-      name = band[:name]
-      name_parts = name.split(/\s+/).map(&:downcase)
-      band_slug = name_parts.join('-')
-      band_slug == slug
-    end
-  end
-
   get '/' do
     [200, { "Content-Type" =>"application/json" }, { name: "Rock & Roll API", version: '0.1' }.to_json]
   end
@@ -56,8 +46,8 @@ class RockAndRollAPI < Sinatra::Base
     attributes.merge(id: band_id, songs: []).to_json
   end
 
-  get '/bands/:slug' do
-    band = band_for_slug(params[:slug])
+  get '/bands/:id' do
+    band = DB[:bands].where(id: params[:id]).first
 
     status 200
     headers({ "Content-Type" =>"application/json" })
@@ -68,11 +58,11 @@ class RockAndRollAPI < Sinatra::Base
     }.to_json
   end
 
-  get '/bands/:slug/songs' do
+  get '/bands/:id/songs' do
+    band = DB[:bands].where(id: params[:id]).first
+
     status 200
     headers({ "Content-Type" =>"application/json" })
-
-    band = band_for_slug(params[:slug])
     songs_for_band(band).to_json
   end
 
